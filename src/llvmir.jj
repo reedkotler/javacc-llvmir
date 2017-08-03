@@ -1,0 +1,217 @@
+// // Based on grammar from https://github.com/llir/grammar
+
+// ### [ Lexical part ] ########################################################
+
+options {
+  BUILD_PARSER=false;
+ }
+ PARSER_BEGIN(llvmir)
+ public class llvmir {}
+ PARSER_END(llvmir)
+ TOKEN_MGR_DECLS: {
+ }
+ TOKEN: {
+   <ascii_letter
+	: ["A" - "Z"]
+	| ["a" - "z"]
+   >
+ }
+ TOKEN: {
+   <letter
+	: <ascii_letter>
+	| "$"
+	| "-"
+	| "."
+	| "_"
+  >
+  }
+ TOKEN: {
+   <escape_letter
+    	: <letter>
+   	    | "\\"
+         >
+  }
+
+TOKEN: {
+  <decimal_digit: ["0" - "9"]>
+}
+
+TOKEN: {<hex_digit
+	: <decimal_digit>
+	| ["A" - "F"]
+	| ["a" - "f"] >
+}
+
+
+SKIP : {
+   <COMMENT: ";" ( ~["\n"] )* "\n" >
+}
+
+SKIP : {
+    <WHITESPACE :  "\\x00" | " " | "\t" | "\r" | "\n">
+}
+
+// === [ Identifiers ] =========================================================
+
+TOKEN: {<name
+	: <letter> ( <letter> | <decimal_digit> )*
+	 >
+	 }
+
+
+TOKEN: {<escape_name
+	: <escape_letter> ( <escape_letter> | <decimal_digit> )* >
+}
+
+TOKEN: {<quoted_name
+	: <quoted_string>
+>}
+
+
+TOKEN: {<id
+	: <decimals>
+>}
+
+// --- [ Global identifiers ] --------------------------------------------------
+
+TOKEN: {<global_ident
+	: <global_name>
+	| <global_id>
+>}
+
+TOKEN: {<global_name
+	: "@" ( <name> | <quoted_name> )
+>}
+
+TOKEN: {<global_id
+	: "@" <id>
+>}
+
+// --- [ Local identifiers ] ---------------------------------------------------
+
+TOKEN: {<local_ident
+	: <local_name>
+	| <local_id>
+>}
+
+TOKEN: {<local_name
+	: "%" ( <name> | <quoted_name> )
+>}
+
+TOKEN: {<local_id
+	: "%" <id> >}
+
+
+// --- [ Labels ] --------------------------------------------------------------
+
+//   Label             [-a-zA-Z$._0-9]+:
+
+TOKEN: {<label_ident
+	: ( <letter> | <decimal_digit> ) ( <letter> | <decimal_digit> )* ":"
+	| <quoted_string> ":"
+>}
+
+
+// --- [ Attribute group identifiers ] -----------------------------------------
+
+TOKEN: {<attr_group_id
+	: "#" <id>
+>}
+
+// --- [ Comdat identifiers ] --------------------------------------------------
+
+TOKEN: {<comdat_name
+	: "$" ( <name> | <quoted_name> )
+>}
+
+
+// --- [ Metadata identifiers ] ------------------------------------------------
+
+TOKEN: {<metadata_name
+	: "!" <escape_name>
+>}
+
+
+TOKEN: {<metadata_id
+	: "!" <id>
+>}
+
+// === [ Integer literals ] ====================================================
+
+//   Integer           [-]?[0-9]+
+
+TOKEN: {<int_lit
+	: <decimal_lit>
+>}
+
+TOKEN: {<decimal_lit
+	: ( "-" )? <decimals>
+>}
+
+TOKEN: {<decimals
+	: <decimal_digit> (<decimal_digit>)*
+>}
+
+// === [ Floating-point literals ] =============================================
+
+//   FPConstant        [-+]?[0-9]+[.][0-9]*([eE][-+]?[0-9]+)?
+
+TOKEN: {<float_lit
+	: <frac_lit>
+	| <sci_lit>
+	| <float_hex_lit>
+>}
+
+TOKEN: {<frac_lit
+	: ( <sign>)? <decimals> "." ( <decimal_digit> )*
+>}
+
+TOKEN: {<sign
+	: "+"
+	| "-"
+>}
+
+TOKEN: {<sci_lit
+	: <frac_lit> ( "e" | "E" ) ( <sign> )? <decimals>
+>}
+
+//   HexFPConstant     0x[0-9A-Fa-f]+     // 16 hex digits
+//   HexFP80Constant   0xK[0-9A-Fa-f]+    // 20 hex digits
+//   HexFP128Constant  0xL[0-9A-Fa-f]+    // 32 hex digits
+//   HexPPC128Constant 0xM[0-9A-Fa-f]+    // 32 hex digits
+//   HexHalfConstant   0xH[0-9A-Fa-f]+    // 4 hex digits
+
+TOKEN: {<HexFPConstant :     "0" "x"     (<hex_digit>) * >}
+TOKEN: {<HexFP80Constant :   "0" "x" "K" (<hex_digit>) * >}
+TOKEN: {<HexFP128Constant :  "0" "x" "L" (<hex_digit>) * >}
+TOKEN: {<HexPPC128Constant : "0" "x" "M" (<hex_digit>) * >}
+TOKEN: {<HexHalfConstant :   "0" "x" "H" (<hex_digit>) * >}
+
+TOKEN: {<float_hex_lit : <HexFPConstant> | <HexFP80Constant> |
+  <HexFP128Constant> | <HexPPC128Constant> | <HexHalfConstant>
+>}
+
+// === [ String literals ] =====================================================
+
+TOKEN: {<string_lit
+	: <quoted_string> >}
+
+
+TOKEN: {<quoted_string
+	: "\"" ( ~["\""] )* "\""
+>}
+
+// === [ Types ] ===============================================================
+
+TOKEN: {<int_type
+	: "i" <decimals> >}
+
+TOKEN:{<eq : "=">}
+
+TOKEN:{<lbrace : "{">}
+
+TOKEN:{<rbrace : "}">}
+
+TOKEN:{<exclam : "!">}
+
+TOKEN:{<comma : ",">}

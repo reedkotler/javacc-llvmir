@@ -215,3 +215,184 @@ TOKEN:{<rbrace : "}">}
 TOKEN:{<exclam : "!">}
 
 TOKEN:{<comma : ",">}
+
+// === [ Modules ] =============================================================
+
+void Module() : {} {
+	TopLevelDecls()
+}
+
+void TopLevelDecls(): {} {
+
+	(TopLevelDecl())*
+}
+
+void TopLevelDecl(): {} {
+	SourceFilename() |
+	TargetSpec() |
+	ModuleAsm () |
+	TypeDef() |
+	ComdatDef () |
+	GlobalDecl () |
+	GlobalDef () |
+	FuncDecl () |
+	FuncDef () |
+	AttrGroupDef () |
+	NamedMetadataDef () |
+	MetadataDef ()
+}
+
+
+// --- [ Source filename ] -----------------------------------------------------
+
+void SourceFilename(): {} {
+	"source_filename" "=" <string_lit>
+}
+
+// --- [ Target specifiers ] ---------------------------------------------------
+
+void TargetSpec() : {} {
+	"target" DataLayout()
+	"target" TargetTriple()
+}
+
+
+void DataLayout() : {} {
+	"datalayout" "=" <string_lit>
+}
+
+void TargetTriple() : {} {
+	"triple" "=" <string_lit>
+}
+
+// --- [ Module-level inline assembly ] ----------------------------------------
+
+// ref: http://llvm.org/docs/LangRef.html#module-level-inline-assembly
+void ModuleAsm() : {} {
+	"module" "asm" <string_lit>
+}
+
+// --- [ Type definitions ] ----------------------------------------------------
+
+void TypeDef() : {} {
+	LocalIdent() "=" "type" Type()
+	LocalIdent() "=" "type" "opaque"
+}
+
+// --- [ Comdat definitions ] --------------------------------------------------
+
+void ComdatDef() : {} {
+	ComdatName() "=" "comdat" SelectionKind()
+}
+
+// From spec and src of v4.0.
+//
+// ref: http://llvm.org/docs/LangRef.html#comdats
+void SelectionKind() : {} {
+	"any"
+	"exactmatch"
+	"largest"
+	"noduplicates"
+	"samesize"
+}
+
+// --- [ Global variables ] ----------------------------------------------------
+
+// TODO: Clean up when the parser generator no longer introduces ambiguities
+// through the limitation of 1 token lookahead.
+//
+// Structured in this way to allow for naiive 1 token lookahead parser
+// generators.
+//
+// Original production rule.
+//
+//    GlobalDecl
+//       : GlobalIdent "=" ExternLinkage GlobalOptions Immutable FirstClassType OptCommaSection OptCommaComdat OptCommaAlign OptCommaAttachedMDList   << astx.NewGlobalDecl($0, $3, $4, $5, $9) >>
+//    ;
+void GlobalDecl(): {} {
+	  GlobalIdent() "=" ExternLinkage() GlobalOptions() Immutable() FirstClassType() OptCommaAttachedMDList()
+	| GlobalIdent() "=" ExternLinkage() GlobalOptions() Immutable() FirstClassType() "," Align() OptCommaAttachedMDList()
+	| GlobalIdent() "=" ExternLinkage() GlobalOptions() Immutable() FirstClassType() "," Comdat() OptCommaAttachedMDList()
+	| GlobalIdent() "=" ExternLinkage() GlobalOptions() Immutable() FirstClassType() "," Comdat() "," Align() OptCommaAttachedMDList()
+	| GlobalIdent() "=" ExternLinkage() GlobalOptions() Immutable() FirstClassType() "," Section() OptCommaAttachedMDList()
+	| GlobalIdent() "=" ExternLinkage() GlobalOptions() Immutable() FirstClassType() "," Section() "," Align() OptCommaAttachedMDList()
+	| GlobalIdent() "=" ExternLinkage() GlobalOptions() Immutable() FirstClassType() "," Section() "," Comdat() OptCommaAttachedMDList()
+	| GlobalIdent() "=" ExternLinkage() GlobalOptions() Immutable() FirstClassType() "," Section() "," Comdat() "," Align() OptCommaAttachedMDList()
+}
+
+// TODO: Clean up when the parser generator no longer introduces ambiguities
+// through the limitation of 1 token lookahead.
+//
+// Structured in this way to allow for naiive 1 token lookahead parser
+// generators.
+//
+// Original production rule.
+//
+//    GlobalDef
+//       : GlobalIdent "=" OptLinkage GlobalOptions Immutable FirstClassType Constant OptCommaSection OptCommaComdat OptCommaAlign OptCommaAttachedMDList   << astx.NewGlobalDef($0, $3, $4, $5, $6, $10) >>
+//    ;
+void GlobalDef() : {}{
+	GlobalIdent() "=" OptLinkage() GlobalOptions() Immutable() FirstClassType() Constant() OptCommaAttachedMDList()
+	GlobalIdent() "=" OptLinkage() GlobalOptions() Immutable() FirstClassType() Constant() "," Align() OptCommaAttachedMDList()
+	GlobalIdent() "=" OptLinkage() GlobalOptions() Immutable() FirstClassType() Constant() "," Comdat() OptCommaAttachedMDList()
+	GlobalIdent() "=" OptLinkage() GlobalOptions() Immutable() FirstClassType() Constant() "," Comdat() "," Align() OptCommaAttachedMDList()
+	GlobalIdent() "=" OptLinkage() GlobalOptions() Immutable() FirstClassType() Constant() "," Section() OptCommaAttachedMDList()
+	GlobalIdent() "=" OptLinkage() GlobalOptions() Immutable() FirstClassType() Constant() "," Section() "," Align() OptCommaAttachedMDList()
+	GlobalIdent() "=" OptLinkage() GlobalOptions() Immutable() FirstClassType() Constant() "," Section() "," Comdat() OptCommaAttachedMDList()
+	GlobalIdent() "=" OptLinkage() GlobalOptions() Immutable() FirstClassType() Constant() "," Section() "," Comdat() "," Align()
+	                  OptCommaAttachedMDList()
+}
+
+void GlobalOptions() : {}{
+	OptVisibility() OptDLLStorageClass() OptThreadLocal() OptUnnamedAddr() OptAddrSpace() OptExternallyInitialized()
+}
+
+void OptExternallyInitialized(): {} {
+	(ExternallyInitialized())?
+}
+
+void ExternallyInitialized() : {}{
+	"externally_initialized"
+}
+
+void Immutable() : {} {
+	"constant"
+	| "global"
+}
+
+// --- [ Functions ] -----------------------------------------------------------
+
+void FuncDecl() : {} {
+	"declare" AttachedMDs() OptExternLinkage() FuncHeader()
+}
+
+void FuncDef() : {}{
+	"define" OptLinkage() FuncHeader() AttachedMDs() FuncBody()
+}
+
+void FuncHeader() : {}{
+	OptVisibility() OptDLLStorageClass() OptCallConv() ParamAttrs() Type() GlobalIdent()
+		"(" (Params())? ")" OptUnnamedAddr() FuncAttrs() OptSection() OptComdat() OptAlign()
+		OptGC() OptPrefix() OptPrologue() OptPersonality()
+}
+
+void Params() : {}{
+	"..."
+	| ParamList()
+	| ParamList() "," "..."
+}
+
+void ParamList() : {}{
+	Param()
+	| ParamList() "," Param()
+}
+
+void Param() : {}{
+	FirstClassType() ParamAttrs()
+	| FirstClassType() ParamAttrs() LocalIdent()
+}
+
+void FuncBody() : {} {
+	"{" BasicBlockList() "}"
+}
+

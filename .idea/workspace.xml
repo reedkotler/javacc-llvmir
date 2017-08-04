@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="867b762b-0963-4b25-a552-dd591a6f644f" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/llvmir.jj" afterPath="$PROJECT_DIR$/src/llvmir.jj" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
@@ -18,8 +17,8 @@
       <file leaf-file-name="llvmir.jj" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/llvmir.jj">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="504">
-              <caret line="859" column="0" lean-forward="true" selection-start-line="859" selection-start-column="0" selection-end-line="859" selection-end-column="0" />
+            <state relative-caret-position="324">
+              <caret line="921" column="23" lean-forward="false" selection-start-line="921" selection-start-column="23" selection-end-line="921" selection-end-column="23" />
               <folding />
             </state>
           </provider>
@@ -568,8 +567,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/llvmir.jj">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="504">
-          <caret line="859" column="0" lean-forward="true" selection-start-line="859" selection-start-column="0" selection-end-line="859" selection-end-column="0" />
+        <state relative-caret-position="324">
+          <caret line="921" column="23" lean-forward="false" selection-start-line="921" selection-start-column="23" selection-end-line="921" selection-end-column="23" />
           <folding />
         </state>
       </provider>

@@ -858,3 +858,75 @@ void InsertValueExpr() : {}{
 void GetElementPtrExpr() : {} {
 	"getelementptr" OptInbounds() "(" FirstClassType() "," FirstClassType() Constant() ConstIndices() ")"
 }
+
+void empty() : {} {
+  {}
+}
+
+void ConstIndices(): {} {
+	empty()
+	| "," ConstIndexList()
+}
+
+void ConstIndexList() : {} {
+	ConstIndex()
+	| ConstIndexList() "," ConstIndex()
+}
+
+void ConstIndex() : {} {
+	IntType() Constant()
+}
+
+// --- [ Conversion expressions ] ----------------------------------------------
+
+void TruncExpr() : {} {
+	"trunc" "(" FirstClassType() Constant() "to" FirstClassType() ")"
+}
+
+void ZExtExpr() : {} {
+	"zext" "(" FirstClassType() Constant() "to" FirstClassType() ")"
+}
+
+void SExtExpr() : {} {
+	"sext" "(" FirstClassType() Constant() "to" FirstClassType() ")"
+}
+
+void FPTruncExpr() : {} {
+    "fptrunc" "(" FirstClassType() Constant() "to" FirstClassType() ")"
+}
+
+void FPExtExpr() : {} {
+	"fpext" "(" FirstClassType() Constant() "to" FirstClassType() ")"
+}
+
+void FPToUIExpr(): {} {
+	"fptoui" "(" FirstClassType() Constant() "to" FirstClassType() ")"
+}
+
+void FPToSIExpr(): {} {
+	"fptosi" "(" FirstClassType() Constant() "to" FirstClassType() ")"
+}
+
+void UIToFPExpr(): {} {
+	"uitofp" "(" FirstClassType() Constant() "to" FirstClassType() ")"
+}
+
+void SIToFPExpr() : {} {
+	"sitofp" "(" FirstClassType() Constant() "to" FirstClassType() ")"
+}
+
+void PtrToIntExpr() : {} {
+	"ptrtoint" "(" FirstClassType() Constant() "to" FirstClassType() ")"
+}
+
+void IntToPtrExpr() : {} {
+	"inttoptr" "(" FirstClassType() Constant() "to" FirstClassType() ")"
+}
+
+void BitCastExpr() : {} {
+	"bitcast" "(" FirstClassType() Constant() "to" FirstClassType() ")"
+}
+
+void AddrSpaceCastExpr() : {} {
+	"addrspacecast" "(" FirstClassType() Constant() "to" FirstClassType() ")"
+}

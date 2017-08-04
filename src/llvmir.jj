@@ -396,3 +396,465 @@ void FuncBody() : {} {
 	"{" BasicBlockList() "}"
 }
 
+// --- [ Attribute group definitions ] -----------------------------------------
+
+void AttrGroupDef() : {} {
+	"attributes" AttrGroupID() "=" "{" FuncAttrList() "}"
+}
+
+// --- [ Metadata definitions ] ------------------------------------------------
+
+void NamedMetadataDef() : {} {
+	MetadataName() "=" "!" "{" MetadataIDs() "}"
+}
+
+void MetadataIDs() : {} {
+	(MetadataIDList())?
+}
+
+void MetadataIDList() : {} {
+	MetadataID()
+	| MetadataIDList() "," MetadataID()
+}
+
+void MetadataDef() : {} {
+	MetadataID() "=" ("distinct")? Metadata()
+}
+
+void Metadata() : {} {
+	"!" "{" (MetadataNodesList())? "}"
+}
+
+void MetadataNodeList() : {} {
+	MetadataNode()
+	| MetadataNodeList() "," MetadataNode()
+}
+
+void MetadataNode() : {} {
+	Metadata()
+	| MetadataID()
+	| "!" <string_lit>
+	| Type() Constant()
+}
+
+// === [ Identifiers ] =========================================================
+
+void GlobalIdent() : {} {
+	<global_ident>
+}
+
+void LocalIdent() : {} {
+	<local_ident>
+}
+
+void LabelIdent() : {} {
+	<label_ident>
+}
+
+void AttrGroupID() : {} {
+	<attr_group_id>
+}
+
+void ComdatName() : {} {
+	<comdat_name>
+}
+
+void MetadataName() : {}{
+	<metadata_name>
+}
+
+void MetadataID() : {} {
+	<metadata_id>
+}
+
+// === [ Types ] ===============================================================
+
+void Type() : {} {
+	VoidType()
+	| FuncType()
+	| FirstClassType()
+}
+
+void FirstClassType() : {} {
+	  IntType()
+	| FloatType()
+	| PointerType()
+	| VectorType()
+	| LabelType()
+	| MetadataType()
+	| ArrayType()
+	| StructType()
+	| NamedType()
+}
+
+// --- [ Void type ] -----------------------------------------------------------
+
+void VoidType() : {} {
+	"void"
+}
+
+// --- [ Function type ] -------------------------------------------------------
+
+void FuncType() : {} {
+	Type() "(" (ParamTypes())? ")"
+}
+
+void ParamTypes() : {} {
+	 "..."
+	| ParamTypeList()
+	| ParamTypeList() "," "..."
+}
+
+void ParamTypeList() : {} {
+	  ParamType()
+	| ParamTypeList() "," ParamType()
+}
+
+void ParamType() : {} {
+	 FirstClassType()
+}
+
+// --- [ Integer type ] --------------------------------------------------------
+
+void IntType() : {} {
+	<int_type>
+}
+
+// --- [ Floating-point type ] -------------------------------------------------
+
+void FloatType() : {} {
+	  "half"
+	| "float"
+	| "double"
+	| "fp128"
+	| "x86_fp80"
+	| "ppc_fp128"
+}
+
+// --- [ Pointer type ] --------------------------------------------------------
+
+void PointerType() : {} {
+	Type() (AddrSpace())? "*"
+}
+
+void AddrSpace() : {} {
+    "addrspace" "(" IntLit() ")"
+}
+
+// --- [ Vector type ] ---------------------------------------------------------
+
+void VectorType(): {} {
+	"<" IntLit() "x" FirstClassType() ">"
+}
+
+// --- [ Label type ] ----------------------------------------------------------
+
+void LabelType() : {} {
+	"label"
+}
+
+// --- [ Metadata type ] -------------------------------------------------------
+
+void MetadataType() : {} {
+	 "metadata"
+}
+
+// --- [ Array type ] ----------------------------------------------------------
+
+void ArrayType() : {} {
+	"[" IntLit() "x" FirstClassType() "]"
+}
+
+// --- [ struct type ] ---------------------------------------------------------
+
+// TODO: Clean up when the parser generator no longer introduces ambiguities
+// through the limitation of 1 token lookahead.
+//
+// Structured in this way to allow for naiive 1 token lookahead parser
+// generators.
+//
+// Original production rule.
+//
+//    StructType
+//       : "{" Fields "}"
+//       | "<" "{" Fields "}" ">"
+//    ;
+//
+//    Fields
+//       : empty
+//       | FieldList
+//    ;
+void StructType() : {} {
+	  "{" "}"
+	| "{" FieldList() "}"
+	| "<" "{" "}" ">"
+	| "<" "{" FieldList() "}" ">"
+}
+
+voie FieldList() : {} {
+	  FirstClassType()
+	| FieldList() "," FirstClassType()
+}
+
+// --- [ Named type ] ----------------------------------------------------------
+
+void NamedType() : {} {
+	LocalIdent()
+}
+
+// === [ Values ] ==============================================================
+
+void Value() : {} {
+	  LocalIdent()
+	| Constant()
+}
+
+// === [ Constants ] ===========================================================
+
+void Constant() : {} {
+	  IntConst()
+	| FloatConst()
+	| NullConst()
+	| VectorConst()
+	| ArrayConst()
+	| CharArrayConst()
+	| StructConst()
+	| ZeroInitializerConst()
+	| GlobalIdent()
+	| UndefConst()
+	| ConstExpr()
+}
+
+// --- [ Integer constant ] ----------------------------------------------------
+
+void IntConst() : {}{
+	  IntLit()
+	| BoolLit()
+}
+
+void IntLit() : {} {
+	<int_lit>
+}
+
+void BoolLit() : {} {
+	  "true"
+	| "false"
+}
+
+// --- [ Floating-point constant ] ---------------------------------------------
+
+void FloatConst() : {} {
+	<float_lit>
+}
+
+// --- [ Pointer constant ] ----------------------------------------------------
+
+void NullConst() : {} {
+	"null"
+}
+
+// --- [ Vector constant ] -----------------------------------------------------
+
+void VectorConst() : {}{
+	"<" ElemList() ">"
+}
+// --- [ Array constant ] ------------------------------------------------------
+
+void ArrayConst() : {} {
+	"[" Elems() "]"
+}
+
+void CharArrayConst() : {} {
+	"c" <string_lit>
+}
+
+// --- [ Struct constant ] -----------------------------------------------------
+
+// TODO: Clean up when the parser generator no longer introduces ambiguities
+// through the limitation of 1 token lookahead.
+//
+// Structured in this way to allow for naiive 1 token lookahead parser
+// generators.
+//
+// Original production rule.
+//
+//    StructConst
+//       : "{" Elems "}"
+//       | "<" "{" Elems "}" ">"
+//    ;
+void StructConst() : {} {
+	  "{" "}"
+	| "{" ElemList() "}"
+	| "<" "{" "}" ">"
+	| "<" "{" ElemList() "}" ">"
+}
+
+// --- [ Zero initializer constant ] -------------------------------------------
+
+void ZeroInitializerConst() : {} {
+	"zeroinitializer"
+}
+
+// --- [ Undefined value constant ] --------------------------------------------
+
+void UndefConst() : {} {
+	"undef"
+}
+
+// === [ Constant expressions ] ================================================
+
+void ConstExpr() : {} {
+	// Binary expressions
+	  AddExpr()
+	| FAddExpr()
+	| SubExpr()
+	| FSubExpr()
+	| MulExpr()
+	| FMulExpr()
+	| UDivExpr()
+	| SDivExpr()
+	| FDivExpr()
+	| URemExpr()
+	| SRemExpr()
+	| FRemExpr()
+	// Bitwise expressions
+	| ShlExpr()
+	| LShrExpr()
+	| AShrExpr()
+	| AndExpr()
+	| OrExpr()
+	| XorExpr()
+	// Vector expressions
+	| ExtractElementExpr()
+	| InsertElementExpr()
+	| ShuffleVectorExpr()
+	// Aggregate expressions
+	| ExtractValueExpr()
+	| InsertValueExpr()
+	// Memory expressions
+	| GetElementPtrExpr()
+	// Conversion expressions
+	| TruncExpr()
+	| ZExtExpr()
+	| SExtExpr()
+	| FPTruncExpr()
+	| FPExtExpr()
+	| FPToUIExpr()
+	| FPToSIExpr()
+	| UIToFPExpr()
+	| SIToFPExpr()
+	| PtrToIntExpr()
+	| IntToPtrExpr()
+	| BitCastExpr()
+	| AddrSpaceCastExpr()
+	// Other expressions
+	| ICmpExpr()
+	| FCmpExpr()
+	| SelectExpr()
+}
+
+// --- [ Binary expressions ] --------------------------------------------------
+
+void AddExpr() : {}{
+	"add" "(" FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+void FAddExpr() : {} {
+	"fadd" "(" FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+void SubExpr() : {} {
+	"sub" "(" FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+void FSubExpr() : {} {
+	"fsub" "(" FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+void MulExpr() : {} {
+	"mul" "(" FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+void FMulExpr() : {} {
+	"fmul" "(" FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+void UDivExpr() : {} {
+	"udiv" "(" FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+void SDivExpr() : {}{
+	"sdiv" "(" FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+void FDivExpr() : {} {
+	"fdiv" "(" FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+void URemExpr() : {} {
+	"urem" "(" FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+void SRemExpr() : {} {
+	"srem" "(" FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+void FRemExpr() : {} {
+	"frem" "(" FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+// --- [ Bitwise expressions ] -------------------------------------------------
+
+void ShlExpr() : {}{
+	"shl" "(" FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+void LShrExpr() : {}{
+	"lshr" "(" FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+void AShrExpr() : {} {
+	"ashr" "(" FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+void AndExpr() : {} {
+	"and" "(" FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+void OrExpr() : {} {
+	"or" "(" FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+void XorExpr() : {} {
+	"xor" "(" FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+// --- [ Vector expressions ] --------------------------------------------------
+
+void ExtractElementExpr() : {} {
+	"extractelement" "(" FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+void InsertElementExpr() : {} {
+	"insertelement" "(" FirstClassType() Constant() "," FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+void ShuffleVectorExpr() : {} {
+	"shufflevector" "(" FirstClassType() Constant() "," FirstClassType() Constant() "," FirstClassType() Constant() ")"
+}
+
+// --- [ Aggregate expressions ] -----------------------------------------------
+
+void ExtractValueExpr() : {} {
+	"extractvalue" "(" FirstClassType() Constant() "," IntLitList() ")"
+}
+
+void InsertValueExpr() : {}{
+	"insertvalue" "(" FirstClassType() Constant() "," FirstClassType() Constant() "," IntLitList() ")"
+}
+
+// --- [ Memory expressions ] --------------------------------------------------
+
+void GetElementPtrExpr() : {} {
+	"getelementptr" OptInbounds() "(" FirstClassType() "," FirstClassType() Constant() ConstIndices() ")"
+}

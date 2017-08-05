@@ -384,7 +384,7 @@ void Params() : {}{
 
 void ParamList() : {}{
 	Param()
-	| ParamList() "," Param()
+	| Param() "," ParamList()
 }
 
 void Param() : {}{
@@ -414,7 +414,7 @@ void MetadataIDs() : {} {
 
 void MetadataIDList() : {} {
 	MetadataID()
-	| MetadataIDList() "," MetadataID()
+	| MetadataID() "," MetadataIDList()
 }
 
 void MetadataDef() : {} {
@@ -427,7 +427,7 @@ void Metadata() : {} {
 
 void MetadataNodeList() : {} {
 	MetadataNode()
-	| MetadataNodeList() "," MetadataNode()
+	| MetadataNode() "," MetadataNodeList()
 }
 
 void MetadataNode() : {} {
@@ -469,16 +469,19 @@ void MetadataID() : {} {
 
 // === [ Types ] ===============================================================
 
+// need to sort out a left recursion problem here between pointer and
+// function types and first class types
+
 void Type() : {} {
 	VoidType()
 	| FuncType()
 	| FirstClassType()
+	| PointerType()
 }
 
 void FirstClassType() : {} {
 	  IntType()
 	| FloatType()
-	| PointerType()
 	| VectorType()
 	| LabelType()
 	| MetadataType()
@@ -496,7 +499,7 @@ void VoidType() : {} {
 // --- [ Function type ] -------------------------------------------------------
 
 void FuncType() : {} {
-	Type() "(" (ParamTypes())? ")"
+	(VoidType() | FirstClassType() 	| PointerType() ) "(" (ParamTypes())? ")"
 }
 
 void ParamTypes() : {} {
@@ -507,7 +510,7 @@ void ParamTypes() : {} {
 
 void ParamTypeList() : {} {
 	  ParamType()
-	| ParamTypeList() "," ParamType()
+	| ParamType() "," ParamTypeList()
 }
 
 void ParamType() : {} {
@@ -534,7 +537,9 @@ void FloatType() : {} {
 // --- [ Pointer type ] --------------------------------------------------------
 
 void PointerType() : {} {
-	Type() (AddrSpace())? "*"
+	//Type() (AddrSpace())? "*"
+	(VoidType() | FirstClassType() ) "*"
+
 }
 
 void OptAddrSpace() : {} {
@@ -597,7 +602,7 @@ void StructType() : {} {
 
 voie FieldList() : {} {
 	  FirstClassType()
-	| FieldList() "," FirstClassType()
+	| FirstClassType() "," FieldList()
 }
 
 // --- [ Named type ] ----------------------------------------------------------
@@ -874,7 +879,7 @@ void ConstIndices(): {} {
 
 void ConstIndexList() : {} {
 	ConstIndex()
-	| ConstIndexList() "," ConstIndex()
+	| ConstIndex() "," ConstIndexList()
 }
 
 void ConstIndex() : {} {
@@ -953,7 +958,7 @@ void SelectExpr() : {}{
 
 void BasicBlockList() : {} {
 	  BasicBlock()
-	| BasicBlockList() BasicBlock()
+	| BasicBlock() BasicBlockList()
 }
 
 void BasicBlock() : {} {
@@ -972,7 +977,7 @@ void Instructions(): {}{
 
 void InstructionList() : {}{
 	  Instruction()
-	| InstructionList() Instruction()
+	| Instruction() InstructionList()
 }
 
 void Instruction() : {} {
@@ -1122,7 +1127,7 @@ void OverflowFlags() : {} {
 
 void OverflowFlagList() : {} {
 	  OverflowFlag()
-	| OverflowFlagList() OverflowFlag()
+	| OverflowFlag() OverflowFlagList()
 }
 
 void OverflowFlag() : {} {
@@ -1136,7 +1141,7 @@ void FastMathFlags() : {} {
 
 void FastMathFlagList(): {} {
 	  FastMathFlag()
-	| FastMathFlagList() FastMathFlag()
+	| FastMathFlag() FastMathFlagList()
 }
 
 // From spec and src of v4.0.
@@ -1222,7 +1227,7 @@ void ExtractValueInst() : {} {
 
 void IntLitList() : {} {
 	  IntLit()
-	| IntLitList() "," IntLit()
+	| IntLit() "," IntLitList()
 }
 
 // ~~~ [ insertvalue ] ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1384,7 +1389,7 @@ void GetElementPtrInst(): {} {
 
 void IndexList() : {} {
 	  Index()
-	| IndexList() "," Index()
+	| Index() "," IndexList()
 }
 
 void Index() : {} {
@@ -1521,7 +1526,7 @@ void PhiInst() : {} {
 
 void IncomingList() : {} {
 	  Incoming()
-	| IncomingList() "," Incoming()
+	| Incoming() "," IncomingList()
 }
 
 void Incoming(): {} {
@@ -1558,7 +1563,7 @@ void Args(): {} {
 
 void ArgList(): {} {
 	  Arg()
-	| ArgList() "," Arg()
+	| Arg() "," ArgList()
 }
 
 void Arg() : {} {
@@ -1587,7 +1592,7 @@ void Clauses() : {} {
 
 void ClauseList(): {} {
 	  Clause()
-	| ClauseList() Clause()
+	| Clause() ClauseList()
 }
 
 void Clause() : {} {
@@ -1656,12 +1661,12 @@ void SwitchTerm(): {} {
 }
 
 void Cases(): {} {
-	(CastList())?
+	(CaseList())?
 }
 
-void CastList() : {} {
+void CaseList() : {} {
 	  Case()
-	| CastList() Case()
+	| Case() CaseList()
 }
 
 void Case(): {} {
@@ -1697,7 +1702,7 @@ void TagValues(): {} {
 
 void TagValueList(): {} {
 	  TagValue()
-	| TagValueList() "," TagValue()
+	| TagValue() "," TagValueList()
 }
 
 void TagValue(): {} {
@@ -1710,7 +1715,7 @@ void Values(): {} {
 
 void ValueList() : {} {
 	FirstClassType() Value()
-	| ValueList() "," FirstClassType() Value()
+	| FirstClassType() Value() "," ValueList()
 }
 
 // ~~~ [ resume ] ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1901,7 +1906,7 @@ void ParamAttrs(): {} {
 
 void ParamAttrList(): {} {
 	  ParamAttr()
-	| ParamAttrList() ParamAttr()
+	| ParamAttr() ParamAttrList()
 }
 
 // From spec and src of v4.0.
@@ -1937,7 +1942,7 @@ void FuncAttrs(): {} {
 
 void FuncAttrList(): {} {
 	  FuncAttr()
-	| FuncAttrList() FuncAttr()
+	| FuncAttr() FuncAttrList()
 }
 
 // From spec and src of v4.0.
@@ -1993,7 +1998,7 @@ void Elems() : {} {
 
 void ElemList(): {} {
 	  Elem()
-	| ElemList() "," Elem()
+	| Elem() "," ElemList()
 }
 
 void Elem(): {} {
@@ -2054,7 +2059,7 @@ void Labels(): {} {
 
 void LabelList(): {} {
 	  Label()
-	| LabelList() "," Label()
+	| Label() "," LabelList()
 }
 
 void Label(): {} {
@@ -2071,7 +2076,7 @@ void AttachedMDs(): {} {
 
 void AttachedMDList(): {} {
 	  AttachedMD()
-	| AttachedMDList() AttachedMD()
+	| AttachedMD() AttachedMDList()
 }
 
 void AttachedMD(): {} {
@@ -2088,6 +2093,6 @@ void OptCommaAttachedMDList(): {} {
 }
 
 void CommaAttachedMDList(): {} {
-	  "," AttachedMD()
-	| CommaAttachedMDList() "," AttachedMD()
+	  ","  AttachedMD()
+	|  "," AttachedMD() CommaAttachedMDList()
 }
